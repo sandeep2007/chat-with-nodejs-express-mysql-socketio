@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Socket Example</title>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/3.0.1/socket.io.js"></script>
+    <style>
+        .chat-box {
+            border: solid 1px rgba(0, 0, 0, .125);
+            border-bottom: none;
+            border-top: none;
+            height: 300px;
+            position: relative;
+
+        }
+
+        .chat-list {
+            position: absolute;
+            bottom: 0;
+            overflow-y: scroll;
+            width: 100%;
+            height: 100%;
+            padding: 8px;
+            padding-left: 20px;
+            padding-right: 10px;
+        }
+
+        .chat-input {
+            margin-bottom: 60px;
+            border-top: none;
+        }
+
+        .chat-header {
+            border-bottom: none;
+        }
+
+        .border-radius-0 {
+            border-radius: 0;
+        }
+
+        .chat-msg-sender {
+            min-width: 20px;
+            background: #ffeb3b6e;
+            width: fit-content;
+            padding: 4px 12px;
+            border-radius: 4px;
+            margin-bottom: 8px;
+            float: right;
+            clear: both;
+        }
+
+        .chat-msg-receiver {
+            min-width: 20px;
+            background: #8bc34a94;
+            width: fit-content;
+            padding: 4px 12px;
+            border-radius: 4px;
+            margin-bottom: 8px;
+            clear: both;
+        }
+
+        /* width */
+        ::-webkit-scrollbar {
+            width: 10px;
+        }
+
+        /* Track */
+        ::-webkit-scrollbar-track {
+            background: #fff;
+        }
+
+        /* Handle */
+        ::-webkit-scrollbar-thumb {
+            background: #fff;
+        }
+
+        /* Handle on hover */
+        ::-webkit-scrollbar-thumb:hover {
+            background: #ccc;
+        }
+
+        .chat-send {
+            cursor: pointer;
+        }
+
+        .chat-input-box {}
+    </style>
+    <script>
+
+        connection = {};
+        server_url = 'http://localhost:3000';
+        socket_url = 'http://localhost:3000';
+        userSocketId = null;
+        receiverId = 0;
+        senderId = 0;
+
+        function createSocket(url, path, token) {
+            let socket = io.connect(url, {
+                //path: path,
+                //rejectUnauthorized: false,
+                secure: true,
+                transports: ['websocket'],
+                query: {
+                    token: token
+                }
+            });
+
+            return socket;
+        }
+
+        function login(el) {
+            event.preventDefault();
+
+            fd = new FormData(el);
+
+            $.ajax({
+                type: 'post',
+                url: server_url + '/auth/login',
+                data: fd,
+                contentType: false,
+                cache: false,
+                processData: false,
+                success: function (response) {
+                    //console.log(response)
+                    if (response.data.token) {
+                        sessionStorage.setItem("token", response.data.token);
+                        sessionStorage.setItem("userData", JSON.stringify(response.data));
+                        $('#login-form').hide();
+                        $('#logout-btn').show();
+
+                        var template = `<div class="alert alert-success alert-dismissible">
+                                            <button type="button" class="close" data-dismiss="alert">&times;</button>
+                                            <strong>Success!</strong> You are logged in.
+                                        </div>`;
+                        showMsg('#msg', template);
+                    }
+                },
+                error: function (err) {
+                    console.log(err)
+                }
+            });
+        }
+
+        function getToken() {
+            if (sessionStorage.getItem("token")) {
+                return sessionStorage.getItem("token");
+            }
+            else {
+                return null;
+            }
+        }
+
+        function getUserData(key) {
+            if (key && sessionStorage.getItem("userData")) {
+                return JSON.parse(sessionStorage.getItem("userData"))[key];
+            }
+            else {
+                return null;
+            }
+        }
+
+        function showMsg(id, template) {
+            $('#msg').html(template);
+            setTimeout(function () {
+                $('#msg').empty();
+            }, 4000);
+        }
+
+        function logout() {
+
+            connection.socket.disconnect();
+            connection.socket = null;
+            sessionStorage.clear()
+            $('#user-list').empty();
+            $('#login-form').show();
+            $('#logout-btn').hide();
+            $('#user-name').hide();
+            $('#chat-box').hide();
+            $('#user-list').show();
+        }
+
+        setInterval(() => {
+            if (!getToken()) {
+                $('#user-name').hide();
+                $('#login-form').show();
+                $('#logout-btn').hide();
+            } else {
+                $('#user-name').show().find('a').text(getUserData('email'));
+                $('#login-form').hide();
+                $('#logout-btn').show();
+            }
+            if (getToken() && !connection.socket) {
+
+                console.log('initiate socket connection')
+
+                connection.socket = createSocket(socket_url, '/test', getToken());
+
+                connection.socket.on('userConnect', (data) => {
+                    // console.log(data)
+                    senderId = getUserData('id');
+                    // userSocketId = data.socket_id;
+                    // console.log(userSocketId);
+
+                    connection.socket.emit('userList', { userId: getUserData('id') });
+                });
+
+                connection.socket.on('userDisconnect', (data) => {
+                    //console.log(data)
+                    connection.socket.emit('userList', { userId: getUserData('id') });
+                });
+
+                connection.socket.on('receiveMessage', (data) => {
+                    //console.log(data);
+                    receiveMessage(data);
+                    connection.socket.emit('userList', { userId: getUserData('id') });
+                });
+
+                connection.socket.on('chatList', (data) => {
+                    //console.log(data)
+                    renderChatList(data);
+                });
+
+                connection.socket.on('pong', (data) => {
+                    //console.log(data.message)
+                    var template = `<div class="alert alert-success alert-dismissible">
+                                            <button type="button" class="close" data-dismiss="alert">&times;</button>
+                                            <strong>Success!</strong> You are connected.
+                                        </div>`;
+                    showMsg('#msg', template);
+                })
+
+                connection.socket.on('userList', (data) => {
+                    renderUser(data)
+                })
+            }
+        }, 1000);
+
+        function test() {
+            if (connection.socket) {
+                connection.socket.emit('ping', {
+                    message: 'Connected'
+                });
+            }
+            else {
+                var template = `<div class="alert alert-danger alert-dismissible">
+                                    <button type="button" class="close" data-dismiss="alert">&times;</button>
+                                    <strong>Failed!</strong> You are disconnected.
+                                </div>`;
+                showMsg('#msg', template);
+                console.log('Disconnected');
+            }
+        }
+
+        function getUser() {
+            connection.socket.emit('get_user', {
+                message: 'Connected'
+            });
+        }
+
+        function renderUser(userList) {
+
+            let userElement = userList.map((data, index) => {
+                //console.log(data);
+                if (data.id != senderId) {
+                    // if (data.socket_id) {
+                    if (data.unread_message > 0) {
+                        var unreadMessage = `<span class="badge badge-light">${data.unread_message}</span>`;
+                    }
+                    else {
+                        var unreadMessage = ``;
+                    }
+
+                    var chatBtn = `
+                        <button type="button" style="width:80px" onclick='createChat(${JSON.stringify(data)})' class="btn btn-sm btn-success float-right">
+                            Chat ${unreadMessage}
+                        </button>
+                        `;
+                    // }
+                    // else {
+                    //     var chatBtn = `<button style="width:80px" class="btn btn-sm btn-secondary float-right">Offline</button>`;
+                    // }
+
+                    //console.log(data)
+                    return `<a href="#" class="list-group-item" > <i class="fa fa-circle ${(data.socket_id ? 'text-success' : 'text-danger')}"></i> ${data.email} 
+                ${chatBtn}
+                </a>`;
+                }
+
+            });
+            $('#user-list').html(userElement);
+        }
+
+        function createChat(data) {
+            receiverId = data.id;
+            //toSocket = data.socket_id;
+            //console.log(senderId, receiverId);
+            renderUserStatus(data)
+            $('#chat-box').show();
+            $('#user-list').hide();
+            connection.socket.emit('chatList', { receiverId: receiverId });
+            scrollChatDown();
+            connection.socket.emit('seenMessage', { senderId: receiverId, receiverId: getUserData('id') });
+            connection.socket.emit('userList', { userId: getUserData('id') });
+        }
+
+        function closeChat() {
+            connection.socket.emit('userList', { userId: getUserData('id') });
+            receiverId = 0;
+            $('#chat-box').hide();
+            $('#user-list').show();
+        }
+
+        function scrollChatDown() {
+            var objDiv = document.getElementById("chat-list");
+            objDiv.scrollTop = objDiv.scrollHeight;
+        }
+
+        function renderUserStatus(data) {
+            //console.log(data.socket_id);
+            var html = `<a href="#" class="list-group-item"> <span>${data.email}</span>
+                        <button type="button" onclick="closeChat()" class="btn btn-sm btn-danger float-right">Close</button>
+                        </a>`;
+            $('#chat-header').html(html);
+
+        }
+
+        function receiveMessage(data) {
+            if (receiverId == data.senderId) {
+                var elMsg = `<div class="chat-msg-receiver">${data.message}<br/><small>${data.date_created}</small></div>`;
+                $('#chat-list').append(elMsg);
+                connection.socket.emit('seenMessage', { senderId: data.senderId, receiverId: data.receiverId });
+                scrollChatDown();
+            }
+        }
+
+        function pad(s) { return (s < 10) ? '0' + s : s; }
+
+        function getCurrentDateTime() {
+            var today = new Date();
+            var date = pad(today.getFullYear()) + '-' + pad((today.getMonth() + 1)) + '-' + pad(today.getDate());
+            var time = pad(today.getHours()) + ":" + pad(today.getMinutes()) + ":" + pad(today.getSeconds());
+            var currentDateTime = date + ' ' + time;
+            return currentDateTime;
+        }
+
+        function sendMessage(target) {
+            var date_created = getCurrentDateTime();
+            var $el = $(target);
+            var message = $el.find('.chat-input-box').val();
+            if (message) {
+                $el.find('.chat-input-box').val('');
+                var elMsg = `<div class="chat-msg-sender">${message}<br/><small>${date_created}</small></div>`;
+                $('#chat-list').append(elMsg);
+                scrollChatDown();
+                // console.log(senderId, receiverId, message, toSocket);
+                connection.socket.emit('sendMessage', { senderId: senderId, receiverId: receiverId, message: message });
+            }
+
+        }
+
+        function renderChatList(chatList) {
+            var chatEl = chatList.map((data) => {
+                //console.log(data)
+                if (data.senderId == senderId) {
+                    return `<div class="chat-msg-sender">${data.message}<br/><small>${data.date_created}</small></div>`;
+                }
+                else {
+                    return `<div class="chat-msg-receiver">${data.message}<br/><small>${data.date_created}</small></div>`;
+                }
+            });
+            $('#chat-list').html(chatEl);
+            scrollChatDown();
+        }
+
+        function press(e) {
+
+            e = e || window.event;
+            if (e.keyCode == 13) {
+                sendMessage('#chat-box');
+            }
+        }
+
+
+    </script>
+
+</head>
+
+<body>
+    <nav class="navbar navbar-expand-sm bg-dark navbar-dark">
+        <ul class="navbar-nav">
+            <li class="nav-item">
+                <a class="nav-link active" href="#">Live Chat</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="javascript:{}" onclick="test()">Test Connection</a>
+            </li>
+            <li class="nav-item" id="user-name" style="display:none">
+                <a class="nav-link" href="javascript:{}"></a>
+            </li>
+            <li class="nav-item" id="logout-btn" style="display:none">
+                <a class="nav-link" href="javascript:{}" onclick="logout()">Logout</a>
+            </li>
+
+        </ul>
+
+    </nav>
+
+    <div class="d-flex justify-content-center">
+        <div class="mt-5" style="width:50vw">
+
+            <div id="msg" style="height:70px"></div>
+            <div class="list-group" id="user-list"></div>
+
+            <div class="jumbotron" id="login-form" style="display:none">
+                <h1>Login</h1>
+                <form onsubmit="login(this)">
+                    <div class="form-group">
+                        <label for="email">Email:</label>
+                        <input type="email" class="form-control" placeholder="Enter email" id="email" name="email">
+                    </div>
+                    <div class="form-group">
+                        <label for="pwd">Password:</label>
+                        <input type="password" class="form-control" placeholder="Enter password" id="pwd"
+                            name="password">
+                    </div>
+
+                    <button type="submit" class="btn btn-success">Login</button>
+                </form>
+            </div>
+            <br />
+
+            <div id="chat-box" style="display:none">
+                <div class="chat-header" id="chat-header"></div>
+                <div class="chat-box">
+                    <div class="chat-list" id="chat-list"></div>
+                </div>
+                <div class="chat-input">
+                    <div class="input-group mb-3">
+                        <input onkeydown="press(event)" id="chat-input" type="text"
+                            class="form-control border-radius-0 chat-input-box" placeholder="Type message...">
+                        <div class="input-group-append">
+                            <span onclick="sendMessage('#chat-box')"
+                                class="input-group-text border-radius-0 chat-send">Send</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>
