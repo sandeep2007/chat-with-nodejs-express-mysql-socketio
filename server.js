@@ -81,7 +81,7 @@ io.on('connection', async (socket) => {
     socket.on('userTyping', (data) => {
         userHandler.getUserSocketId(data.receiverId, (err, data) => {
             if (!err) {
-                io.to(data.socket_id).emit('userTyping');
+                io.to(data.socket_id).emit('userTyping', { senderId: socket.userData.id });
             }
         })
     })
@@ -101,7 +101,7 @@ io.on('connection', async (socket) => {
     })
 
     socket.on('userList', (data) => {
-        userHandler.userList({ userId: data.userId }, (userList) => {
+        userHandler.userList({ userId: socket.userData.id }, (userList) => {
             socket.emit('userList', userList);
         });
     });

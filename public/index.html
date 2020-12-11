@@ -241,19 +241,19 @@
                     // userSocketId = data.socket_id;
                     // console.log(userSocketId);
                     renderUserStatus(data);
-                    connection.socket.emit('userList', { userId: getUserData('id') });
+                    connection.socket.emit('userList');
                 });
 
                 connection.socket.on('userDisconnect', (data) => {
                     //console.log(data)
                     renderUserStatus(data);
-                    connection.socket.emit('userList', { userId: getUserData('id') });
+                    connection.socket.emit('userList');
                 });
 
                 connection.socket.on('receiveMessage', (data) => {
                     //console.log(data);
                     receiveMessage(data);
-                    connection.socket.emit('userList', { userId: getUserData('id') });
+                    connection.socket.emit('userList');
                 });
 
                 connection.socket.on('chatList', (data) => {
@@ -275,11 +275,12 @@
                 })
 
                 connection.socket.on('userTyping', (data) => {
-                    userTyping();
+                    userTyping(data);
                 })
 
                 connection.socket.on('seenMessage', () => {
                     // console.log('seen')
+
                     seenAllMessages();
                 });
             }
@@ -357,11 +358,11 @@
             connection.socket.emit('chatList', { receiverId: receiverId });
             scrollChatDown();
             connection.socket.emit('seenMessage', { senderId: receiverId, receiverId: getUserData('id') });
-            connection.socket.emit('userList', { userId: getUserData('id') });
+            connection.socket.emit('userList');
         }
 
         function closeChat() {
-            connection.socket.emit('userList', { userId: getUserData('id') });
+            connection.socket.emit('userList');
             receiverId = 0;
             $('#chat-box').hide();
             $('#user-list').show();
@@ -449,16 +450,19 @@
         }
 
         typingStatus = true;
-        function userTyping() {
-            $('.user-typing').fadeIn();
+        function userTyping(data) {
 
-            if (typingStatus) {
-                typingStatus = false;
-                setTimeout(() => {
-                    $('.user-typing').fadeOut();
-                    typingStatus = true;
-                }, 5000);
+            if (receiverId == data.senderId) {
+                $('.user-typing').fadeIn();
+                if (typingStatus) {
+                    typingStatus = false;
+                    setTimeout(() => {
+                        $('.user-typing').fadeOut();
+                        typingStatus = true;
+                    }, 5000);
+                }
             }
+
 
         }
 
