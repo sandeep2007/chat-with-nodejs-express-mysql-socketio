@@ -278,10 +278,10 @@
                     userTyping(data);
                 })
 
-                connection.socket.on('seenMessage', () => {
+                connection.socket.on('seenMessage', (data) => {
                     // console.log('seen')
 
-                    seenAllMessages();
+                    seenAllMessages(data);
                 });
             }
         }, 1000);
@@ -308,11 +308,13 @@
             });
         }
 
-        function seenAllMessages() {
-            $('#chat-list').find('.is-seen').html('<i class="fa fa-eye" aria-hidden="true"></i>');
-            setTimeout(() => {
-                $('#chat-list').find('.is-seen').show('fade');
-            }, 500);
+        function seenAllMessages(data) {
+            if (data.receiverId == receiverId) {
+                $('#chat-list').find('.is-seen').html('<i class="fa fa-eye" aria-hidden="true"></i>');
+                setTimeout(() => {
+                    $('#chat-list').find('.is-seen').show('fade');
+                }, 500);
+            }
         }
 
         function renderUser(userList) {
@@ -357,7 +359,7 @@
             $('#user-list').hide();
             connection.socket.emit('chatList', { receiverId: receiverId });
             scrollChatDown();
-            connection.socket.emit('seenMessage', { senderId: receiverId, receiverId: getUserData('id') });
+            connection.socket.emit('seenMessage', { senderId: data.id });
             connection.socket.emit('userList');
         }
 
@@ -396,10 +398,9 @@
             if (receiverId == data.senderId) {
                 var elMsg = `<div class="chat-msg-receiver message-item">${data.message}<br/><small>${data.date_created}</small></div>`;
                 $('#chat-list').append(elMsg);
-                connection.socket.emit('seenMessage', { senderId: data.senderId, receiverId: data.receiverId });
+                connection.socket.emit('seenMessage', { senderId: data.senderId });
                 scrollChatDown();
             }
-
         }
 
         function pad(s) { return (s < 10) ? '0' + s : s; }

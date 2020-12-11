@@ -94,9 +94,9 @@ io.on('connection', async (socket) => {
 
     socket.on('seenMessage', (data) => {
 
-        userHandler.seenMessage(data, (seenData) => {
+        userHandler.seenMessage({ senderId: data.senderId, receiverId: socket.userData.id }, (seenData) => {
             //console.log(seenData)
-            io.to(seenData.senderSocketId).emit('seenMessage');
+            io.to(seenData.senderSocketId).emit('seenMessage', { receiverId: socket.userData.id });
         });
     })
 
