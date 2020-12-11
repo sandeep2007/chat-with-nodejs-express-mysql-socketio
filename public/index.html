@@ -91,7 +91,7 @@
         }
 
         .list-group-item small {
-            margin-left: 18px;
+            /* margin-left: 41px; */
         }
 
         /* width */
@@ -116,6 +116,27 @@
 
         .chat-send {
             cursor: pointer;
+        }
+
+        .user-profile {
+            height: 36px;
+            width: 36px;
+            border: solid 1px #ccc;
+            border-radius: 50%;
+        }
+
+        .profile-status {
+            position: absolute;
+            bottom: 13px;
+            left: 46px;
+            font-size: 12px;
+        }
+
+        .profile-status-1 {
+            position: absolute;
+            bottom: 37px;
+            left: 46px;
+            font-size: 12px;
         }
 
         @media only screen and (max-width: 600px) {
@@ -335,13 +356,8 @@
                             Chat ${unreadMessage}
                         </button>
                         `;
-                    // }
-                    // else {
-                    //     var chatBtn = `<button style="width:80px" class="btn btn-sm btn-secondary float-right">Offline</button>`;
-                    // }
 
-                    //console.log(data)
-                    return `<a href="javascript:{}" class="list-group-item" > <i class="fa fa-circle ${(data.socket_id ? 'text-success' : 'text-danger')}"></i> ${data.email} 
+                    return `<a href="javascript:{}" class="list-group-item" > <i class="profile-status fa fa-circle ${(data.socket_id ? 'text-success' : 'text-danger')}"></i> <img class="user-profile" src="${data.image}"> ${data.name} 
                 ${chatBtn}
                 </a>`;
                 }
@@ -381,12 +397,11 @@
 
             if (receiverId == data.id) {
                 $('.last-seen').fadeOut();
-                let userPresense = `<i class="fa fa-circle ${(data.is_online == 'ONLINE' ? 'text-success' : 'text-danger')}"></i>`;
+                let userPresense = `<i class="profile-status-1 fa fa-circle ${(data.is_online == 'ONLINE' ? 'text-success' : 'text-danger')}"></i>`;
 
-                var html = `<a href="javascript:{}" class="list-group-item"> ${userPresense} <span>${data.email}</span>
+                var html = `<a href="javascript:{}" class="list-group-item"> ${userPresense} <img class="user-profile" src="${data.image}"> <span>${data.name} <br/><small class="last-seen" style="display:none">${data.last_seen != null ? (data.is_online == 'ONLINE' ? 'Online' : 'Last seen ' + data.last_seen) : ''}</small></span>
+                   
             <button type="button" onclick="closeChat()" class="btn btn-sm btn-danger float-right">Close</button>
-            <br/>
-            <small class="last-seen" style="display:none">${data.last_seen != null ? (data.is_online == 'ONLINE' ? 'Online' : 'Last seen ' + data.last_seen) : ''}</small>
             </a>`;
                 $('#chat-header').html(html);
                 $('.last-seen').fadeIn();

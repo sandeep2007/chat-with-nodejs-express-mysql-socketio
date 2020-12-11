@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Dec 10, 2020 at 11:39 AM
+-- Generation Time: Dec 11, 2020 at 07:22 AM
 -- Server version: 10.4.14-MariaDB
 -- PHP Version: 7.4.9
 
@@ -72,6 +72,8 @@ CREATE TABLE `users` (
   `id` bigint(20) UNSIGNED NOT NULL,
   `email` varchar(150) NOT NULL,
   `password` varchar(10) NOT NULL,
+  `name` varchar(50) NOT NULL,
+  `image` varchar(500) NOT NULL,
   `date_created` varchar(50) NOT NULL,
   `auth_key` varchar(100) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
@@ -80,11 +82,11 @@ CREATE TABLE `users` (
 -- Dumping data for table `users`
 --
 
-INSERT INTO `users` (`id`, `email`, `password`, `date_created`, `auth_key`) VALUES
-(1, 'user1@mail.com', '123', '2020-11-27 12:00:00', '589623'),
-(2, 'user2@mail.com', '123', '2020-11-27 12:00:00', '369852'),
-(3, 'user3@mail.com', '123', '2020-11-27 12:00:00', '123456'),
-(4, 'user4@mail.com', '123', '2020-11-27 12:00:00', '654321');
+INSERT INTO `users` (`id`, `email`, `password`, `name`, `image`, `date_created`, `auth_key`) VALUES
+(1, 'user1@mail.com', '123', 'User 1', 'profile.jpg', '2020-11-27 12:00:00', '589623'),
+(2, 'user2@mail.com', '123', 'User 2', 'profile.jpg', '2020-11-27 12:00:00', '369852'),
+(3, 'user3@mail.com', '123', 'User 3', 'profile.jpg', '2020-11-27 12:00:00', '123456'),
+(4, 'user4@mail.com', '123', 'User 4', 'profile.jpg', '2020-11-27 12:00:00', '654321');
 
 --
 -- Indexes for dumped tables
@@ -139,7 +141,7 @@ ALTER TABLE `last_seen`
 -- AUTO_INCREMENT for table `socket_users`
 --
 ALTER TABLE `socket_users`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=241;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `users`

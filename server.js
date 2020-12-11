@@ -64,7 +64,7 @@ io.on('connection', async (socket) => {
 
     console.log('User connected ' + socket.id);
 
-    io.emit('userConnect', { socket_id: socket.id, id: socket.userData.id, email: socket.userData.email, is_online: 'ONLINE', last_seen: socket.userData.last_seen });
+    io.emit('userConnect', { socket_id: socket.id, id: socket.userData.id, email: socket.userData.email, is_online: 'ONLINE', last_seen: socket.userData.last_seen, name: socket.userData.name, image: socket.userData.image });
 
     socket.on('pingTest', (data) => {
         socket.emit('pongTest', data);
@@ -109,7 +109,7 @@ io.on('connection', async (socket) => {
     socket.on('disconnect', () => {
         let date = dateFormat(new Date(), "yyyy-mm-dd HH:MM:ss");
         console.log('user disconnected ' + socket.id);
-        io.emit('userDisconnect', { socket_id: null, id: socket.userData.id, email: socket.userData.email, is_online: 'OFFLINE', last_seen: date });
+        io.emit('userDisconnect', { socket_id: null, id: socket.userData.id, email: socket.userData.email, is_online: 'OFFLINE', last_seen: date, name: socket.userData.name, image: socket.userData.image });
         userHandler.deleteUserToken(socket);
     });
 
