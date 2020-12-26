@@ -1,16 +1,18 @@
 {
-  "name": "socket_example",
+  "name": "Livechat",
   "version": "1.0.0",
   "description": "Websocket Online users example with Express, Mysql and NodeJs",
   "main": "server.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "nodemon server.js"
+    "start": "nodemon server.js nodemon server.js --trace-warnings --unhandled-rejections=strict"
   },
   "keywords": [
-    "Groupsgyani",
-    "API",
-    "REST"
+    "REST",
+    "Socket.io",
+    "NodeJs",
+    "Express",
+    "MySql"
   ],
   "author": "Sandeep Kumar",
   "license": "ISC",
@@ -26,7 +28,7 @@
     "mysql": "^2.18.1",
     "nodemon": "^2.0.4",
     "path": "^0.12.7",
-    "socket.io": "^3.0.3",
+    "socket.io": "^2.0.3",
     "validatorjs": "^3.19.2"
   }
 }

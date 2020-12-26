@@ -29,7 +29,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 app.get('/info', (req, res) => {
     res.json({
-        name: "API Server",
+        name: "Chat Server",
         version: "1.0.0"
     })
 })
@@ -49,6 +49,8 @@ http.listen(process.env.PORT, () => {
     console.log("Server running at https://0.0.0.0:" + process.env.PORT)
 });
 
+userHandler.clearSocketUsers();
+
 io.use(async (socket, next) => {
     let token = await socket.handshake.query.token;
     let isToken = await userHandler.verifyToken(token, socket);
@@ -59,61 +61,93 @@ io.use(async (socket, next) => {
     return next(new Error('authentication error'));
 });
 
+io.sockets.on("error", e => console.log(e));
+
 io.on('connection', async (socket) => {
 
+    try {
+        console.log('User connected ' + socket.id);
 
-    console.log('User connected ' + socket.id);
+        io.emit('userConnect', { socket_id: socket.id, id: socket.userData.id, email: socket.userData.email, is_online: 'ONLINE', last_seen: socket.userData.last_seen, name: socket.userData.name, image: socket.userData.image });
 
-    io.emit('userConnect', { socket_id: socket.id, id: socket.userData.id, email: socket.userData.email, is_online: 'ONLINE', last_seen: socket.userData.last_seen, name: socket.userData.name, image: socket.userData.image });
-
-    socket.on('pingTest', (data) => {
-        socket.emit('pongTest', data);
-    });
-
-    socket.on('sendMessage', (data) => {
-
-        userHandler.userChatInput(data, (err, chatData) => {
-            io.emit('test_data', { err });
-            io.to(chatData.toSocket).emit('receiveMessage', chatData);
+        socket.on('pingTest', (data) => {
+            socket.emit('pongTest', data);
         });
-    });
 
-    socket.on('userTyping', (data) => {
-        userHandler.getUserSocketId(data.receiverId, (err, data) => {
-            if (!err) {
-                io.to(data.socket_id).emit('userTyping', { senderId: socket.userData.id });
-            }
+        socket.on('sendMessage', (data) => {
+
+            userHandler.userChatInput(data, (err, chatData) => {
+
+                userHandler.getUserSocketId(data.receiverId, (err, data) => {
+                    if (!err) {
+                        data.forEach(value => {
+                            io.to(value.socket_id).emit('receiveMessage', chatData);
+                        });
+                    }
+                });
+
+                userHandler.getUserSocketId(data.senderId, (err, data1) => {
+                    if (!err) {
+                        data1.forEach(value => {
+                            io.to(value.socket_id).emit('sendBackMessage', chatData);
+                        });
+                    }
+                });
+            });
+        });
+
+        socket.on('userTyping', (data) => {
+
+            userHandler.getUserSocketId(data.receiverId, (err, data) => {
+                if (!err) {
+                    data.forEach(value => {
+                        io.to(value.socket_id).emit('userTyping', { senderId: socket.userData.id });
+                    });
+                }
+
+            });
         })
-    })
 
-    socket.on('chatList', (data) => {
-        userHandler.userChatList({ senderId: socket.userData.id, receiverId: data.receiverId }, (chatList) => {
-            socket.emit('chatList', chatList.reverse());
+        socket.on('chatList', (data) => {
+            userHandler.userChatList({ senderId: socket.userData.id, receiverId: data.receiverId, page: 1 }, (chatList) => {
+                socket.emit('chatList', chatList.reverse());
+            });
         });
-    });
 
-    socket.on('seenMessage', (data) => {
+        socket.on('seenMessage', (data) => {
 
-        userHandler.seenMessage({ senderId: data.senderId, receiverId: socket.userData.id }, (seenData) => {
-            //console.log(seenData)
-            io.to(seenData.senderSocketId).emit('seenMessage', { receiverId: socket.userData.id });
+            userHandler.seenMessage({ senderId: data.senderId, receiverId: socket.userData.id }, (seenData) => {
+                //console.log(seenData)
+                userHandler.getUserSocketId(data.senderId, (err, data1) => {
+
+                    if (!err) {
+                        data1.forEach(value => {
+
+                            io.to(value.socket_id).emit('seenMessage', { receiverId: socket.userData.id });
+                        });
+                    }
+
+                });
+
+            });
+        })
+
+        socket.on('userList', (data) => {
+            userHandler.userList({ userId: socket.userData.id }, (userList) => {
+                socket.emit('userList', userList);
+            });
         });
-    })
 
-    socket.on('userList', (data) => {
-        userHandler.userList({ userId: socket.userData.id }, (userList) => {
-            socket.emit('userList', userList);
+        socket.on('disconnect', () => {
+            userHandler.deleteUserToken(socket, () => {
+                console.log('user disconnected ' + socket.id);
+                let date = dateFormat(new Date(), "yyyy-mm-dd HH:MM:ss");
+                io.emit('userDisconnect', { socket_id: null, id: socket.userData.id, email: socket.userData.email, is_online: 'OFFLINE', last_seen: date, name: socket.userData.name, image: socket.userData.image });
+            });
         });
-    });
-
-    socket.on('disconnect', () => {
-        let date = dateFormat(new Date(), "yyyy-mm-dd HH:MM:ss");
-        console.log('user disconnected ' + socket.id);
-        io.emit('userDisconnect', { socket_id: null, id: socket.userData.id, email: socket.userData.email, is_online: 'OFFLINE', last_seen: date, name: socket.userData.name, image: socket.userData.image });
-        userHandler.deleteUserToken(socket);
-    });
-
-
-
+    }
+    catch (err) {
+        console.log(err)
+    }
 });
 

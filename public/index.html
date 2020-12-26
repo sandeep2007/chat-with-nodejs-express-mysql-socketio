@@ -11,7 +11,7 @@
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/3.0.1/socket.io.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.0.3/socket.io.js"></script>
     <style>
         .chat-box {
             border: solid 1px rgba(0, 0, 0, .125);
@@ -81,7 +81,7 @@
             width: 100%;
             bottom: 38px;
             padding-left: 21px;
-            padding-bottom: 4px;
+            padding-bottom: 19px;
             font-size: small;
             display: none;
         }
@@ -134,9 +134,14 @@
 
         .profile-status-1 {
             position: absolute;
-            bottom: 37px;
+            bottom: 13px;
             left: 46px;
             font-size: 12px;
+        }
+
+        .form-control:focus {
+            box-shadow: none;
+            border-color: #ced4da;
         }
 
         @media only screen and (max-width: 600px) {
@@ -153,6 +158,8 @@
         userSocketId = null;
         receiverId = 0;
         senderId = 0;
+
+
 
         function createSocket(url, path, token) {
             let socket = io.connect(url, {
@@ -277,6 +284,11 @@
                     connection.socket.emit('userList');
                 });
 
+                connection.socket.on('sendBackMessage', (data) => {
+                    console.log(data);
+                    sendBackMessage(data)
+                });
+
                 connection.socket.on('chatList', (data) => {
                     //console.log(data)
                     renderChatList(data);
@@ -357,11 +369,19 @@
                         </button>
                         `;
 
-                    return `<a href="javascript:{}" class="list-group-item" > <i class="profile-status fa fa-circle ${(data.socket_id ? 'text-success' : 'text-danger')}"></i> <img class="user-profile" src="${data.image}"> ${data.name} 
-                ${chatBtn}
-                </a>`;
+                    return `<a href="javascript:{}" class="list-group-item" > 
+                            <div class="float-left" style="margin-right: 9px;">
+                            <i class="profile-status fa fa-circle ${(data.is_online == 'ONLINE' ? 'text-success' : 'text-danger')}"></i> <img class="user-profile" src="${data.image}"> 
+                            </div>
+                            <div class="float-left">
+                                <div>${data.name}</div>
+                                <div style="margin-top: -9px;">
+                                <small>${data.email}</small>
+                                </div>
+                            </div>
+                         ${chatBtn}
+                        </a>`;
                 }
-
             });
             $('#user-list').html(userElement);
         }
@@ -399,21 +419,44 @@
                 $('.last-seen').fadeOut();
                 let userPresense = `<i class="profile-status-1 fa fa-circle ${(data.is_online == 'ONLINE' ? 'text-success' : 'text-danger')}"></i>`;
 
-                var html = `<a href="javascript:{}" class="list-group-item"> ${userPresense} <img class="user-profile" src="${data.image}"> <span>${data.name} <br/><small class="last-seen" style="display:none">${data.last_seen != null ? (data.is_online == 'ONLINE' ? 'Online' : 'Last seen ' + data.last_seen) : ''}</small></span>
+                var html = `
+                
+                <a href="javascript:{}" class="list-group-item" style="height: 62px;">
+                    <button type="button" onclick="closeChat()" class="btn btn-sm btn-danger float-right">Close</button>
+                    <div class="float-left" style="margin-right: 10px;">
+                        <img class="user-profile" src="${data.image}">
+                        ${userPresense}
+                    </div> 
+                    <div class="float-left">
+                        <div>${data.name}</div>
+                        <div style="margin-top: -9px;"><small class="last-seen" style="display:none">${data.last_seen != null ? (data.is_online == 'ONLINE' ? 'Online' : 'Last seen ' + data.last_seen) : ''}</small>
+                        </div>
+                    </div> 
                    
-            <button type="button" onclick="closeChat()" class="btn btn-sm btn-danger float-right">Close</button>
+                    
+           
             </a>`;
                 $('#chat-header').html(html);
                 $('.last-seen').fadeIn();
             }
         }
 
+        function sendBackMessage(data) {
+            //if (senderId == data.senderId) {
+            var elMsg = `<div class="chat-msg-sender message-item"><small class="is-seen float-right"></small> ${data.message}<br/><small>${data.date_created}</small></div>`;
+            $('#chat-list').append(elMsg);
+            scrollChatDown();
+            //}
+        }
+
         function receiveMessage(data) {
-            userTypingHide();
+
+
             if (receiverId == data.senderId) {
                 var elMsg = `<div class="chat-msg-receiver message-item">${data.message}<br/><small>${data.date_created}</small></div>`;
                 $('#chat-list').append(elMsg);
                 connection.socket.emit('seenMessage', { senderId: data.senderId });
+                userTypingHide();
                 scrollChatDown();
             }
         }
@@ -429,14 +472,15 @@
         }
 
         function sendMessage(target) {
+            event.preventDefault();
             var date_created = getCurrentDateTime();
             var $el = $(target);
             var message = $el.find('.chat-input-box').val();
             if (message) {
                 $el.find('.chat-input-box').val('');
-                var elMsg = `<div class="chat-msg-sender message-item"><small class="is-seen float-right"></small>${message}<br/><small>${date_created}</small></div>`;
-                $('#chat-list').append(elMsg);
-                scrollChatDown();
+                // var elMsg = `<div class="chat-msg-sender message-item"><small class="is-seen float-right"></small>${message}<br/><small>${date_created}</small></div>`;
+                // $('#chat-list').append(elMsg);
+                //scrollChatDown();
                 // console.log(senderId, receiverId, message, toSocket);
                 connection.socket.emit('sendMessage', { senderId: senderId, receiverId: receiverId, message: message });
             }
@@ -483,6 +527,7 @@
         }
 
         function userTypingHide() {
+
             $('.user-typing').hide();
         }
 
@@ -550,14 +595,18 @@
                 </div>
                 <div class="user-typing">Typing...</div>
                 <div class="chat-input">
-                    <div class="input-group mb-3">
-                        <input onkeydown="press(event)" id="chat-input" type="text"
-                            class="form-control border-radius-0 chat-input-box" placeholder="Type message...">
-                        <div class="input-group-append">
-                            <span onclick="sendMessage('#chat-box')"
-                                class="input-group-text border-radius-0 chat-send">Send</span>
+                    <form autocomplete="off" style="display: flex;">
+                        <div class="input-group mb-3">
+
+                            <input onkeydown="press(event)" id="chat-input" type="text"
+                                class="form-control border-radius-0 chat-input-box" placeholder="Type message...">
+                            <div class="input-group-append">
+                                <span onclick="sendMessage('#chat-box')"
+                                    class="input-group-text border-radius-0 chat-send">Send</span>
+                            </div>
+
                         </div>
-                    </div>
+                    </form>
                 </div>
             </div>
         </div>
