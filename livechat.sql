@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Dec 11, 2020 at 07:22 AM
+-- Generation Time: Dec 26, 2020 at 03:23 PM
 -- Server version: 10.4.14-MariaDB
 -- PHP Version: 7.4.9
 
@@ -18,16 +18,16 @@ SET time_zone = "+00:00";
 /*!40101 SET NAMES utf8mb4 */;
 
 --
--- Database: `socket`
+-- Database: `livechat`
 --
 
 -- --------------------------------------------------------
 
 --
--- Table structure for table `chat`
+-- Table structure for table `ch_chat`
 --
 
-CREATE TABLE `chat` (
+CREATE TABLE `ch_chat` (
   `id` bigint(20) UNSIGNED NOT NULL,
   `sender_id` bigint(20) UNSIGNED NOT NULL,
   `receiver_id` bigint(20) UNSIGNED NOT NULL,
@@ -36,31 +36,56 @@ CREATE TABLE `chat` (
   `date_created` varchar(50) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+--
+-- Dumping data for table `ch_chat`
+--
+
+INSERT INTO `ch_chat` (`id`, `sender_id`, `receiver_id`, `message`, `is_seen`, `date_created`) VALUES
+(1, 1, 2, 0xd9998d50fdeb6516bd27c90f76757da4, 1, '2020-12-26 19:50:46'),
+(2, 2, 1, 0x64161a1f9b2a6bb9ebe369ab69a06228, 1, '2020-12-26 19:50:50'),
+(3, 2, 1, 0x7e7972ae310fd0ba57826cc1cbfff293, 1, '2020-12-26 19:50:58');
+
 -- --------------------------------------------------------
 
 --
--- Table structure for table `last_seen`
+-- Table structure for table `ch_last_seen`
 --
 
-CREATE TABLE `last_seen` (
+CREATE TABLE `ch_last_seen` (
   `id` bigint(20) UNSIGNED NOT NULL,
   `user_id` bigint(20) UNSIGNED NOT NULL,
   `action` varchar(10) NOT NULL,
   `date_created` varchar(50) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+--
+-- Dumping data for table `ch_last_seen`
+--
+
+INSERT INTO `ch_last_seen` (`id`, `user_id`, `action`, `date_created`) VALUES
+(1, 1, 'LOGIN', '2020-12-26 19:50:32'),
+(2, 2, 'LOGIN', '2020-12-26 19:50:41');
+
 -- --------------------------------------------------------
 
 --
--- Table structure for table `socket_users`
+-- Table structure for table `ch_socket_users`
 --
 
-CREATE TABLE `socket_users` (
+CREATE TABLE `ch_socket_users` (
   `id` bigint(20) UNSIGNED NOT NULL,
   `token` varchar(100) NOT NULL,
   `socket_id` varchar(100) NOT NULL,
   `date_created` varchar(50) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+--
+-- Dumping data for table `ch_socket_users`
+--
+
+INSERT INTO `ch_socket_users` (`id`, `token`, `socket_id`, `date_created`) VALUES
+(1, '589623', '3M6w0EpLVIu2gY_DAAAA', '2020-12-26 19:50:32'),
+(2, '369852', 'VGqURWQOTwMtCGaDAAAB', '2020-12-26 19:50:41');
 
 -- --------------------------------------------------------
 
@@ -93,23 +118,23 @@ INSERT INTO `users` (`id`, `email`, `password`, `name`, `image`, `date_created`,
 --
 
 --
--- Indexes for table `chat`
+-- Indexes for table `ch_chat`
 --
-ALTER TABLE `chat`
+ALTER TABLE `ch_chat`
   ADD PRIMARY KEY (`id`);
 
 --
--- Indexes for table `last_seen`
+-- Indexes for table `ch_last_seen`
 --
-ALTER TABLE `last_seen`
+ALTER TABLE `ch_last_seen`
   ADD PRIMARY KEY (`id`);
 
 --
--- Indexes for table `socket_users`
+-- Indexes for table `ch_socket_users`
 --
-ALTER TABLE `socket_users`
+ALTER TABLE `ch_socket_users`
   ADD PRIMARY KEY (`id`),
-  ADD UNIQUE KEY `token` (`token`),
+  ADD UNIQUE KEY `token` (`token`,`socket_id`),
   ADD KEY `socket_id` (`socket_id`);
 
 --
@@ -126,22 +151,22 @@ ALTER TABLE `users`
 --
 
 --
--- AUTO_INCREMENT for table `chat`
+-- AUTO_INCREMENT for table `ch_chat`
 --
-ALTER TABLE `chat`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
+ALTER TABLE `ch_chat`
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
--- AUTO_INCREMENT for table `last_seen`
+-- AUTO_INCREMENT for table `ch_last_seen`
 --
-ALTER TABLE `last_seen`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
+ALTER TABLE `ch_last_seen`
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
--- AUTO_INCREMENT for table `socket_users`
+-- AUTO_INCREMENT for table `ch_socket_users`
 --
-ALTER TABLE `socket_users`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
+ALTER TABLE `ch_socket_users`
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT for table `users`
