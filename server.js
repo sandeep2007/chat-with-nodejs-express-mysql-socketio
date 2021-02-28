@@ -4,6 +4,7 @@ const cors = require('cors')
 const fs = require('fs');
 const path = require('path')
 const dateFormat = require('dateformat');
+const fn = require('./lib/functions');
 
 app = express()
 app.use(cors())
@@ -43,10 +44,6 @@ const io = require('socket.io')(http, {
 
 app.get("/", function (req, res, next) {
     res.sendFile(__dirname + "/public/index.html");
-});
-
-http.listen(process.env.PORT, () => {
-    console.log("Server running at https://0.0.0.0:" + process.env.PORT)
 });
 
 userHandler.clearSocketUsers();
@@ -89,6 +86,7 @@ io.on('connection', async (socket) => {
                 userHandler.getUserSocketId(data.senderId, (err, data1) => {
                     if (!err) {
                         data1.forEach(value => {
+
                             io.to(value.socket_id).emit('sendBackMessage', chatData);
                         });
                     }
@@ -108,9 +106,10 @@ io.on('connection', async (socket) => {
             });
         })
 
-        socket.on('chatList', (data) => {
-            userHandler.userChatList({ senderId: socket.userData.id, receiverId: data.receiverId, page: 1 }, (chatList) => {
-                socket.emit('chatList', chatList.reverse());
+        socket.on('chatList', (data, chatPageIndex) => {
+            userHandler.userChatList({ senderId: socket.userData.id, receiverId: data.receiverId, page: chatPageIndex }, (chatList) => {
+                nextChatPageIndex = (fn.isEmpty(chatList)) ? chatPageIndex : (chatPageIndex + 1)
+                socket.emit('chatList', chatList.reverse(), nextChatPageIndex);
             });
         });
 
@@ -149,5 +148,9 @@ io.on('connection', async (socket) => {
     catch (err) {
         console.log(err)
     }
+});
+
+http.listen(process.env.PORT, process.env.APP_HOST, () => {
+    console.log("Server running at https://" + process.env.APP_HOST + ":" + process.env.PORT)
 });
 

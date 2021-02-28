@@ -2,376 +2,474 @@
 <html lang="en">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Live Chat</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Live Chat</title>
 
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>
-    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.0.3/socket.io.js"></script>
-    <style>
-        .chat-box {
-            border: solid 1px rgba(0, 0, 0, .125);
-            border-bottom: none;
-            border-top: none;
-            height: 300px;
-            position: relative;
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" />
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" />
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/3.1.1/socket.io.js"></script>
+  <script src="/localforage.min.js"></script>
 
-        }
+  <style>
+    .chat-box {
+      border: solid 1px rgba(0, 0, 0, 0.125);
+      border-bottom: none;
+      border-top: none;
+      height: 300px;
+      position: relative;
+    }
 
-        .chat-list {
-            position: absolute;
-            bottom: 0;
-            overflow-y: scroll;
-            width: 100%;
-            height: 100%;
-            padding: 8px;
-            padding-left: 20px;
-            padding-right: 10px;
-            padding-bottom: 17px;
-        }
-
-        .chat-input {
-            margin-bottom: 60px;
-            border-top: none;
-        }
-
-        .chat-input-box {
-            padding-left: 20px;
-        }
-
-        .chat-header {
-            border-bottom: none;
-        }
-
-        .border-radius-0 {
-            border-radius: 0;
-        }
-
-        .chat-msg-sender {
-            min-width: 20px;
-            background: #ffeb3b6e;
-            width: fit-content;
-            padding: 4px 12px;
-            border-radius: 4px;
-            margin-bottom: 8px;
-            float: right;
-            clear: both;
-        }
-
-        .chat-msg-receiver {
-            min-width: 20px;
-            background: #8bc34a94;
-            width: fit-content;
-            padding: 4px 12px;
-            border-radius: 4px;
-            margin-bottom: 8px;
-            clear: both;
-        }
-
-        .message-item {
-            max-width: 90%
-        }
-
-        .user-typing {
-            position: absolute;
-            width: 100%;
-            bottom: 38px;
-            padding-left: 21px;
-            padding-bottom: 19px;
-            font-size: small;
-            display: none;
-        }
-
-        .list-group-item {
-            text-decoration: none !important;
-        }
-
-        .list-group-item small {
-            /* margin-left: 41px; */
-        }
-
-        /* width */
-        ::-webkit-scrollbar {
-            width: 10px;
-        }
-
-        /* Track */
-        ::-webkit-scrollbar-track {
-            background: #fff;
-        }
-
-        /* Handle */
-        ::-webkit-scrollbar-thumb {
-            background: #fff;
-        }
-
-        /* Handle on hover */
-        ::-webkit-scrollbar-thumb:hover {
-            background: #ccc;
-        }
-
-        .chat-send {
-            cursor: pointer;
-        }
-
-        .user-profile {
-            height: 36px;
-            width: 36px;
-            border: solid 1px #ccc;
-            border-radius: 50%;
-        }
-
-        .profile-status {
-            position: absolute;
-            bottom: 13px;
-            left: 46px;
-            font-size: 12px;
-        }
-
-        .profile-status-1 {
-            position: absolute;
-            bottom: 13px;
-            left: 46px;
-            font-size: 12px;
-        }
-
-        .form-control:focus {
-            box-shadow: none;
-            border-color: #ced4da;
-        }
-
-        @media only screen and (max-width: 600px) {
-            .main-container {
-                width: 90vw !important
-            }
-        }
-    </style>
-    <script>
-
-        connection = {};
-        server_url = 'http://localhost:3000';
-        socket_url = 'http://localhost:3000';
-        userSocketId = null;
-        receiverId = 0;
-        senderId = 0;
+    .chat-loading {
+      text-align: center;
+      display: none;
+    }
 
 
 
-        function createSocket(url, path, token) {
-            let socket = io.connect(url, {
-                //path: path,
-                //rejectUnauthorized: false,
-                secure: true,
-                transports: ['websocket'],
-                query: {
-                    token: token
-                }
-            });
+    .chat-list {
+      position: absolute;
+      bottom: 0;
+      overflow-y: scroll;
+      width: 100%;
+      height: 100%;
+      padding: 8px;
+      padding-left: 20px;
+      padding-right: 10px;
+      padding-bottom: 17px;
+      padding-top: 16px;
+      scroll-behavior: revert;
+    }
 
-            return socket;
-        }
 
-        function login(el) {
-            event.preventDefault();
-            $('.login-err').empty();
-            fd = new FormData(el);
 
-            $.ajax({
-                type: 'post',
-                url: server_url + '/auth/login',
-                data: fd,
-                contentType: false,
-                cache: false,
-                processData: false,
-                success: function (response) {
-                    //console.log(response)
-                    if (response.data.token) {
-                        sessionStorage.setItem("token", response.data.token);
-                        sessionStorage.setItem("userData", JSON.stringify(response.data));
-                        $('#login-form').hide();
-                        $('#logout-btn').show();
+    .chat-input {
+      margin-bottom: 60px;
+      border-top: none;
+    }
 
-                        var template = `<div class="alert alert-success alert-dismissible">
+    .chat-input-box {
+      padding-left: 20px;
+    }
+
+    .chat-header {
+      border-bottom: none;
+    }
+
+    .border-radius-0 {
+      border-radius: 0;
+    }
+
+    .chat-msg-sender {
+      min-width: 20px;
+      background: #ffeb3b6e;
+      width: fit-content;
+      padding: 4px 12px;
+      border-radius: 4px;
+      margin-bottom: 8px;
+      float: right;
+      clear: both;
+    }
+
+    .chat-msg-receiver {
+      min-width: 20px;
+      background: #8bc34a94;
+      width: fit-content;
+      padding: 4px 12px;
+      border-radius: 4px;
+      margin-bottom: 8px;
+      clear: both;
+    }
+
+    .message-item {
+      max-width: 90%;
+    }
+
+    .user-typing {
+      position: absolute;
+      width: 100%;
+      bottom: 38px;
+      padding-left: 21px;
+      padding-bottom: 19px;
+      font-size: small;
+      display: none;
+    }
+
+    .chat-bottom {
+      position: relative;
+      float: right;
+      background: #ccc;
+      border-radius: 50%;
+      padding: 2px 10px;
+      display: none;
+      cursor: pointer;
+      border: solid 1px #8d8d8d;
+      font-size: 1.4em;
+      padding-bottom: 4px;
+    }
+
+    .new-message {
+      text-align: right;
+      position: absolute;
+      width: 100%;
+      bottom: 38px;
+      padding-right: 21px;
+      padding-bottom: 19px;
+      font-size: small;
+      margin-bottom: 14px;
+    }
+
+    .message-count {
+      position: absolute;
+      background: #4caf50;
+      color: #fff;
+      padding: 4px 9px;
+      border-radius: 50%;
+      user-select: none;
+      font-size: 8px;
+      display: none;
+      top: -5px;
+      left: -8px;
+
+    }
+
+    .list-group-item {
+      text-decoration: none !important;
+    }
+
+    .list-group-item small {
+      /* margin-left: 41px; */
+    }
+
+    /* width */
+    ::-webkit-scrollbar {
+      width: 10px;
+    }
+
+    /* Track */
+    ::-webkit-scrollbar-track {
+      background: #fff;
+    }
+
+    /* Handle */
+    ::-webkit-scrollbar-thumb {
+      background: #fff;
+    }
+
+    /* Handle on hover */
+    ::-webkit-scrollbar-thumb:hover {
+      background: #ccc;
+    }
+
+    .chat-send {
+      cursor: pointer;
+    }
+
+    .user-profile {
+      height: 36px;
+      width: 36px;
+      border: solid 1px #ccc;
+      border-radius: 50%;
+    }
+
+    .profile-status {
+      position: absolute;
+      bottom: 13px;
+      left: 46px;
+      font-size: 12px;
+    }
+
+    .profile-status-1 {
+      position: absolute;
+      bottom: 13px;
+      left: 46px;
+      font-size: 12px;
+    }
+
+    .form-control:focus {
+      box-shadow: none;
+      border-color: #ced4da;
+    }
+
+    @media only screen and (max-width: 600px) {
+      .main-container {
+        width: 90vw !important;
+      }
+    }
+  </style>
+  <script>
+    connection = {};
+    server_url = "http://localhost:3000";
+    socket_url = "http://localhost:3000";
+    userSocketId = null;
+    receiverId = 0;
+    senderId = 0;
+    chatPageIndex = 1;
+    chatPointer = 'bottom';
+    chatTop = false;
+    newMsg = 0;
+
+
+
+    function createSocket(url, path, token) {
+      let socket = io.connect(url, {
+        //path: path,
+        //rejectUnauthorized: false,
+        secure: true,
+        transports: ["websocket"],
+        query: {
+          token: token,
+        },
+      });
+
+      return socket;
+    }
+
+    function login(el) {
+      event.preventDefault();
+      $(".login-err").empty();
+      fd = new FormData(el);
+
+      $.ajax({
+        type: "post",
+        url: server_url + "/auth/login",
+        data: fd,
+        contentType: false,
+        cache: false,
+        processData: false,
+        success: function (response) {
+          //console.log(response)
+          if (response.data.token) {
+            sessionStorage.setItem("token", response.data.token);
+            sessionStorage.setItem("userData", JSON.stringify(response.data));
+            $("#login-form").hide();
+            $("#logout-btn").show();
+
+            var template = `<div class="alert alert-success alert-dismissible">
                                             <button type="button" class="close" data-dismiss="alert">&times;</button>
                                             <strong>Success!</strong> You are logged in.
                                         </div>`;
-                        showMsg('#msg', template);
-                    }
-                },
-                error: function (err) {
-                    $('.login-err').text('Incorrect login').css('color', '#f00');
-                    console.log(err)
-                }
-            });
-        }
+            showMsg("#msg", template);
+          }
+        },
+        error: function (err) {
+          $(".login-err").text("Incorrect login").css("color", "#f00");
+          console.log(err);
+        },
+      });
+    }
 
-        function getToken() {
-            if (sessionStorage.getItem("token")) {
-                return sessionStorage.getItem("token");
-            }
-            else {
-                return null;
-            }
-        }
+    function getToken() {
+      if (sessionStorage.getItem("token")) {
+        return sessionStorage.getItem("token");
+      } else {
+        return null;
+      }
+    }
 
-        function getUserData(key) {
-            if (key && sessionStorage.getItem("userData")) {
-                return JSON.parse(sessionStorage.getItem("userData"))[key];
-            }
-            else {
-                return null;
-            }
-        }
+    function getUserData(key) {
+      if (key && sessionStorage.getItem("userData")) {
+        return JSON.parse(sessionStorage.getItem("userData"))[key];
+      } else {
+        return null;
+      }
+    }
 
-        function showMsg(id, template) {
-            $('#msg').html(template);
-            setTimeout(function () {
-                $('#msg').empty();
-            }, 4000);
-        }
+    function showMsg(id, template) {
+      $("#msg").html(template);
+      setTimeout(function () {
+        $("#msg").empty();
+      }, 4000);
+    }
 
-        function logout() {
+    function logout() {
+      connection.socket.disconnect();
+      connection.socket = null;
+      sessionStorage.clear();
+      $("#user-list").empty();
+      $("#login-form").show();
+      $("#logout-btn").hide();
+      $("#user-name").hide();
+      $("#chat-box").hide();
+      $("#user-list").show();
 
-            connection.socket.disconnect();
-            connection.socket = null;
-            sessionStorage.clear()
-            $('#user-list').empty();
-            $('#login-form').show();
-            $('#logout-btn').hide();
-            $('#user-name').hide();
-            $('#chat-box').hide();
-            $('#user-list').show();
-        }
+      localforage.removeItem("userList", function (err, value) {
+        console.log("userList cleared");
+      });
+    }
 
-        setInterval(() => {
-            if (!getToken()) {
-                $('#user-name').hide();
-                $('#login-form').show();
-                $('#logout-btn').hide();
-            } else {
-                $('#user-name').show().find('a').text(getUserData('email'));
-                $('#login-form').hide();
-                $('#logout-btn').show();
-            }
-            if (getToken() && !connection.socket) {
+    setInterval(() => {
+      if (!getToken()) {
+        $("#user-name").hide();
+        $("#login-form").show();
+        $("#logout-btn").hide();
+      } else {
+        $("#user-name").show().find("a").text(getUserData("email"));
+        $("#login-form").hide();
+        $("#logout-btn").show();
+      }
+      if (getToken() && !connection.socket) {
+        console.log("initiate socket connection");
 
-                console.log('initiate socket connection')
+        connection.socket = createSocket(socket_url, "/test", getToken());
 
-                connection.socket = createSocket(socket_url, '/test', getToken());
+        connection.socket.on("userConnect", (data) => {
+          //console.log(data)
+          senderId = getUserData("id");
+          // userSocketId = data.socket_id;
+          // console.log(userSocketId);
+          renderUserStatus(data);
+          connection.socket.emit("userList");
+        });
 
-                connection.socket.on('userConnect', (data) => {
-                    //console.log(data)
-                    senderId = getUserData('id');
-                    // userSocketId = data.socket_id;
-                    // console.log(userSocketId);
-                    renderUserStatus(data);
-                    connection.socket.emit('userList');
-                });
+        connection.socket.on("userDisconnect", (data) => {
+          //console.log(data)
+          renderUserStatus(data);
+          connection.socket.emit("userList");
+        });
 
-                connection.socket.on('userDisconnect', (data) => {
-                    //console.log(data)
-                    renderUserStatus(data);
-                    connection.socket.emit('userList');
-                });
+        connection.socket.on("receiveMessage", (data) => {
+          //console.log(data);
 
-                connection.socket.on('receiveMessage', (data) => {
-                    //console.log(data);
-                    receiveMessage(data);
-                    connection.socket.emit('userList');
-                });
+          receiveMessage(data);
+          connection.socket.emit("userList");
+        });
 
-                connection.socket.on('sendBackMessage', (data) => {
-                    console.log(data);
-                    sendBackMessage(data)
-                });
+        connection.socket.on("sendBackMessage", (data) => {
+          console.log(data);
+          sendBackMessage(data);
+        });
 
-                connection.socket.on('chatList', (data) => {
-                    //console.log(data)
-                    renderChatList(data);
-                });
+        connection.socket.on("chatList", (data, nextChatPageIndex) => {
+          console.log(nextChatPageIndex)
+          chatPageIndex = nextChatPageIndex;
+          chatTop = false;
+          // console.log(data);
+          setTimeout(() => {
+            $('.chat-loading').hide();
+          }, 500);
 
-                connection.socket.on('pongTest', (data) => {
-                    //console.log(data.message)
-                    var template = `<div class="alert alert-success alert-dismissible">
+
+          renderChatList(data);
+        });
+
+        connection.socket.on("pongTest", (data) => {
+          //console.log(data.message)
+          var template = `<div class="alert alert-success alert-dismissible">
                                             <button type="button" class="close" data-dismiss="alert">&times;</button>
                                             <strong>Success!</strong> You are connected.
                                         </div>`;
-                    showMsg('#msg', template);
-                })
+          showMsg("#msg", template);
+        });
 
-                connection.socket.on('userList', (data) => {
-                    renderUser(data)
-                })
+        connection.socket.on("userList", (data) => {
+          localforage.setItem("userList", data, function (err) {
+            // if err is non-null, we got an error
+            if (!err) {
+              setTimeout(() => {
+                renderUser(data);
+              }, 100);
 
-                connection.socket.on('userTyping', (data) => {
-                    userTyping(data);
-                })
-
-                connection.socket.on('seenMessage', (data) => {
-                    // console.log('seen')
-
-                    seenAllMessages(data);
-                });
+            } else {
+              console.log("Error: failed to set userList");
+              var template = `<div class="alert alert-danger alert-dismissible">
+                                            <button type="button" class="close" data-dismiss="alert">&times;</button>
+                                            <strong>Error!</strong> failed to fetch userList.
+                                        </div>`;
+              showMsg("#msg", template);
             }
-        }, 1000);
+          });
 
-        function testConnection() {
-            if (connection.socket) {
-                connection.socket.emit('pingTest', {
-                    message: 'Connected'
-                });
-            }
-            else {
-                var template = `<div class="alert alert-danger alert-dismissible">
+          /*  renderUser(JSON.parse(localStorage.getItem('userList')))
+                 setTimeout(() => {
+                      localStorage.setItem('userList', JSON.stringify(data));
+                      renderUser(data); 
+                     
+                  }, 5000);
+
+                  if(localStorage.getItem('userList')){
+                    
+                      renderUser(JSON.parse(localStorage.getItem('userList')))
+                  }
+                  else{
+                      
+                      renderUser(data); 
+                  } */
+        });
+
+        connection.socket.on("userTyping", (data) => {
+          userTyping(data);
+        });
+
+        connection.socket.on("seenMessage", (data) => {
+          // console.log('seen')
+
+          seenAllMessages(data);
+        });
+      }
+    }, 1000);
+
+    function testConnection() {
+      if (connection.socket) {
+        connection.socket.emit("pingTest", {
+          message: "Connected",
+        });
+      } else {
+        var template = `<div class="alert alert-danger alert-dismissible">
                                     <button type="button" class="close" data-dismiss="alert">&times;</button>
                                     <strong>Failed!</strong> You are disconnected.
                                 </div>`;
-                showMsg('#msg', template);
-                console.log('Disconnected');
-            }
-        }
+        showMsg("#msg", template);
+        console.log("Disconnected");
+      }
+    }
 
-        function getUser() {
-            connection.socket.emit('get_user', {
-                message: 'Connected'
-            });
-        }
+    function getUser() {
+      connection.socket.emit("get_user", {
+        message: "Connected",
+      });
+    }
 
-        function seenAllMessages(data) {
-            if (data.receiverId == receiverId) {
-                $('#chat-list').find('.is-seen').html('<i class="fa fa-eye" aria-hidden="true"></i>');
-                setTimeout(() => {
-                    $('#chat-list').find('.is-seen').show('fade');
-                }, 500);
-            }
-        }
+    function seenAllMessages(data) {
+      if (data.receiverId == receiverId) {
+        $("#chat-list")
+          .find(".is-seen")
+          .html('<i class="fa fa-eye" aria-hidden="true"></i>');
+        setTimeout(() => {
+          $("#chat-list").find(".is-seen").show("fade");
+        }, 500);
+      }
+    }
 
-        function renderUser(userList) {
+    function renderUser(userList) {
+      let userElement = userList.map((data, index) => {
+        //console.log(data);
+        if (data.id != senderId) {
+          // if (data.socket_id) {
+          if (data.unread_message > 0) {
+            var unreadMessage = `<span class="badge badge-light">${data.unread_message}</span>`;
+          } else {
+            var unreadMessage = ``;
+          }
 
-            let userElement = userList.map((data, index) => {
-                //console.log(data);
-                if (data.id != senderId) {
-                    // if (data.socket_id) {
-                    if (data.unread_message > 0) {
-                        var unreadMessage = `<span class="badge badge-light">${data.unread_message}</span>`;
-                    }
-                    else {
-                        var unreadMessage = ``;
-                    }
-
-                    var chatBtn = `
-                        <button type="button" style="width:80px" onclick='createChat(${JSON.stringify(data)})' class="btn btn-sm btn-success float-right">
+          var chatBtn = `
+                        <button type="button" style="width:80px" onclick='createChat(${JSON.stringify(
+            data
+          )})' class="btn btn-sm btn-success float-right">
                             Chat ${unreadMessage}
                         </button>
                         `;
 
-                    return `<a href="javascript:{}" class="list-group-item" > 
+          return `<a href="javascript:{}" class="list-group-item" > 
                             <div class="float-left" style="margin-right: 9px;">
-                            <i class="profile-status fa fa-circle ${(data.is_online == 'ONLINE' ? 'text-success' : 'text-danger')}"></i> <img class="user-profile" src="${data.image}"> 
+                            <i class="profile-status fa fa-circle ${data.is_online == "ONLINE"
+              ? "text-success"
+              : "text-danger"
+            }"></i> <img class="user-profile" src="${data.image
+            }"> 
                             </div>
                             <div class="float-left">
                                 <div>${data.name}</div>
@@ -381,45 +479,55 @@
                             </div>
                          ${chatBtn}
                         </a>`;
-                }
-            });
-            $('#user-list').html(userElement);
         }
+      });
+      $("#user-list").html(userElement);
+    }
 
-        function createChat(data) {
-            receiverId = data.id;
-            //toSocket = data.socket_id;
-            //console.log(senderId, receiverId);
-            renderUserStatus(data)
-            $('#chat-box').show();
-            $('#user-list').hide();
-            connection.socket.emit('chatList', { receiverId: receiverId });
-            scrollChatDown();
-            connection.socket.emit('seenMessage', { senderId: data.id });
-            connection.socket.emit('userList');
-        }
+    function createChat(data) {
 
-        function closeChat() {
-            connection.socket.emit('userList');
-            receiverId = 0;
-            $('#chat-box').hide();
-            $('#user-list').show();
-            $('#chat-list').empty();
+      receiverId = data.id;
+      //toSocket = data.socket_id;
+      //console.log(senderId, receiverId);
+      renderUserStatus(data);
+      $("#chat-box").show();
+      $("#user-list").hide();
+      connection.socket.emit("chatList", { receiverId: receiverId }, chatPageIndex);
+      scrollChatDown();
+      connection.socket.emit("seenMessage", { senderId: data.id });
+      connection.socket.emit("userList");
 
-        }
+    }
 
-        function scrollChatDown() {
-            var objDiv = document.getElementById("chat-list");
-            objDiv.scrollTop = objDiv.scrollHeight;
-        }
+    function closeChat() {
+      connection.socket.emit("userList");
+      receiverId = 0;
+      chatPageIndex = 1;
+      chatPointer = 'bottom';
+      $("#chat-box").hide();
+      $("#user-list").show();
+      $("#chat-list").empty();
+    }
 
-        function renderUserStatus(data) {
 
-            if (receiverId == data.id) {
-                $('.last-seen').fadeOut();
-                let userPresense = `<i class="profile-status-1 fa fa-circle ${(data.is_online == 'ONLINE' ? 'text-success' : 'text-danger')}"></i>`;
 
-                var html = `
+
+
+    function scrollChatDown() {
+      if (chatPointer == 'bottom') {
+        var objDiv = document.getElementById("chat-list");
+        objDiv.scrollTop = objDiv.scrollHeight;
+
+      }
+    }
+
+    function renderUserStatus(data) {
+      if (receiverId == data.id) {
+        $(".last-seen").fadeOut();
+        let userPresense = `<i class="profile-status-1 fa fa-circle ${data.is_online == "ONLINE" ? "text-success" : "text-danger"
+          }"></i>`;
+
+        var html = `
                 
                 <a href="javascript:{}" class="list-group-item" style="height: 62px;">
                     <button type="button" onclick="closeChat()" class="btn btn-sm btn-danger float-right">Close</button>
@@ -429,188 +537,277 @@
                     </div> 
                     <div class="float-left">
                         <div>${data.name}</div>
-                        <div style="margin-top: -9px;"><small class="last-seen" style="display:none">${data.last_seen != null ? (data.is_online == 'ONLINE' ? 'Online' : 'Last seen ' + data.last_seen) : ''}</small>
+                        <div style="margin-top: -9px;"><small class="last-seen" style="display:none">${data.last_seen != null
+            ? data.is_online == "ONLINE"
+              ? "Online"
+              : "Last seen " + data.last_seen
+            : ""
+          }</small>
                         </div>
                     </div> 
                    
                     
            
             </a>`;
-                $('#chat-header').html(html);
-                $('.last-seen').fadeIn();
-            }
+        $("#chat-header").html(html);
+        $(".last-seen").fadeIn();
+      }
+    }
+
+    function sendBackMessage(data) {
+
+      //if (senderId == data.senderId) {
+      var elMsg = `<div class="chat-msg-sender message-item"><small class="is-seen float-right"></small> ${data.message}<br/><small>${data.date_created}</small></div>`;
+      $("#chat-list").append(elMsg);
+      scrollChatDown();
+      //}
+    }
+
+    function receiveMessage(data) {
+      if (receiverId == data.senderId) {
+        var elMsg = `<div class="chat-msg-receiver message-item">${data.message}<br/><small>${data.date_created}</small></div>`;
+        $("#chat-list").append(elMsg);
+
+        userTypingHide();
+        scrollChatDown();
+
+        if (chatPointer == 'top') {
+          newMsg += 1;
+          $('.message-count').text(newMsg).show();
         }
+      }
+    }
 
-        function sendBackMessage(data) {
-            //if (senderId == data.senderId) {
-            var elMsg = `<div class="chat-msg-sender message-item"><small class="is-seen float-right"></small> ${data.message}<br/><small>${data.date_created}</small></div>`;
-            $('#chat-list').append(elMsg);
-            scrollChatDown();
-            //}
-        }
+    function pad(s) {
+      return s < 10 ? "0" + s : s;
+    }
 
-        function receiveMessage(data) {
+    function getCurrentDateTime() {
+      var today = new Date();
+      var date =
+        pad(today.getFullYear()) +
+        "-" +
+        pad(today.getMonth() + 1) +
+        "-" +
+        pad(today.getDate());
+      var time =
+        pad(today.getHours()) +
+        ":" +
+        pad(today.getMinutes()) +
+        ":" +
+        pad(today.getSeconds());
+      var currentDateTime = date + " " + time;
+      return currentDateTime;
+    }
 
-
-            if (receiverId == data.senderId) {
-                var elMsg = `<div class="chat-msg-receiver message-item">${data.message}<br/><small>${data.date_created}</small></div>`;
-                $('#chat-list').append(elMsg);
-                connection.socket.emit('seenMessage', { senderId: data.senderId });
-                userTypingHide();
-                scrollChatDown();
-            }
-        }
-
-        function pad(s) { return (s < 10) ? '0' + s : s; }
-
-        function getCurrentDateTime() {
-            var today = new Date();
-            var date = pad(today.getFullYear()) + '-' + pad((today.getMonth() + 1)) + '-' + pad(today.getDate());
-            var time = pad(today.getHours()) + ":" + pad(today.getMinutes()) + ":" + pad(today.getSeconds());
-            var currentDateTime = date + ' ' + time;
-            return currentDateTime;
-        }
-
-        function sendMessage(target) {
-            event.preventDefault();
-            var date_created = getCurrentDateTime();
-            var $el = $(target);
-            var message = $el.find('.chat-input-box').val();
-            if (message) {
-                $el.find('.chat-input-box').val('');
-                // var elMsg = `<div class="chat-msg-sender message-item"><small class="is-seen float-right"></small>${message}<br/><small>${date_created}</small></div>`;
-                // $('#chat-list').append(elMsg);
-                //scrollChatDown();
-                // console.log(senderId, receiverId, message, toSocket);
-                connection.socket.emit('sendMessage', { senderId: senderId, receiverId: receiverId, message: message });
-            }
-
-        }
-
-        function renderChatList(chatList) {
-            var chatEl = chatList.map((data) => {
-                // console.log(data)
-                if (data.senderId == senderId) {
-                    return `<div class="chat-msg-sender message-item"><small class="is-seen float-right">${data.is_seen ? '<i class="fa fa-eye" aria-hidden="true"></i>' : ''}</small>${data.message}<br/><small>${data.date_created}</small></div>`;
-                }
-                else {
-                    return `<div class="chat-msg-receiver message-item">${data.message}<br/><small>${data.date_created}</small></div>`;
-                }
-            });
-            $('#chat-list').html(chatEl);
-            scrollChatDown();
-        }
-
-        function press(e) {
-
-            e = e || window.event;
-            if (e.keyCode == 13) {
-                sendMessage('#chat-box');
-            }
-        }
-
-        typingStatus = true;
-        function userTyping(data) {
-
-            if (receiverId == data.senderId) {
-                $('.user-typing').fadeIn();
-                if (typingStatus) {
-                    typingStatus = false;
-                    setTimeout(() => {
-                        $('.user-typing').fadeOut();
-                        typingStatus = true;
-                    }, 5000);
-                }
-            }
-
-
-        }
-
-        function userTypingHide() {
-
-            $('.user-typing').hide();
-        }
-
-        $(document).ready(() => {
-            $('#chat-input').on('keyup', (e) => {
-                if (e.target.value != '') {
-                    connection.socket.emit('userTyping', { receiverId: receiverId });
-                }
-            })
+    function sendMessage(target) {
+      event.preventDefault();
+      var date_created = getCurrentDateTime();
+      var $el = $(target);
+      var message = $el.find(".chat-input-box").val();
+      if (message) {
+        $el.find(".chat-input-box").val("");
+        // var elMsg = `<div class="chat-msg-sender message-item"><small class="is-seen float-right"></small>${message}<br/><small>${date_created}</small></div>`;
+        // $('#chat-list').append(elMsg);
+        //scrollChatDown();
+        // console.log(senderId, receiverId, message, toSocket);
+        connection.socket.emit("sendMessage", {
+          senderId: senderId,
+          receiverId: receiverId,
+          message: message,
         });
+        chatPointer = 'bottom';
+        $('#chat-input').focus();
+      }
+    }
 
-    </script>
+    function renderChatList(chatList) {
+      var chatEl = chatList.map((data) => {
+        // console.log(data)
+        if (data.senderId == senderId) {
+          return `<div class="chat-msg-sender message-item"><small class="is-seen float-right">${data.is_seen ? '<i class="fa fa-eye" aria-hidden="true"></i>' : ""
+            }</small>${data.message}<br/><small>${data.date_created
+            }</small></div>`;
+        } else {
+          return `<div class="chat-msg-receiver message-item">${data.message}<br/><small>${data.date_created}</small></div>`;
+        }
+      });
+      if (chatPointer == 'bottom') {
+        $("#chat-list").css('scroll-behavior', 'revert').html(chatEl);
+      }
+      else {
+        $("#chat-list").css('scroll-behavior', 'smooth').prepend(chatEl);
+      }
+      scrollChatDown();
 
+    }
+
+    function press(e) {
+      e = e || window.event;
+      if (e.keyCode == 13) {
+        sendMessage("#chat-box");
+      }
+    }
+
+    typingStatus = true;
+    function userTyping(data) {
+      if (receiverId == data.senderId) {
+        $(".user-typing").fadeIn();
+        if (typingStatus) {
+          typingStatus = false;
+          setTimeout(() => {
+            $(".user-typing").fadeOut();
+            typingStatus = true;
+          }, 5000);
+        }
+      }
+    }
+
+    function userTypingHide() {
+      $(".user-typing").hide();
+    }
+
+    function showNewMsg() {
+      $('.chat-list').css('scroll-behavior', 'unset');
+      chatPointer = 'bottom';
+      scrollChatDown();
+    }
+
+
+
+    $(document).ready(() => {
+      $("#chat-input").on("keyup", (e) => {
+        if (e.target.value != "") {
+          connection.socket.emit("userTyping", { receiverId: receiverId });
+        }
+      });
+
+      if (getUserData("id")) {
+        localforage.getItem("userList", function (err, data) {
+          if (data) {
+            renderUser(data);
+          } else {
+            console.log("Error: failed to fetch userList");
+            var template = `<div class="alert alert-warning alert-dismissible">
+                                <button type="button" class="close" data-dismiss="alert">&times;</button>
+                                <strong>Info!</strong> Fetching user list.
+                            </div>`;
+            showMsg("#msg", template);
+          }
+        });
+      }
+
+      isTop = false;
+      $('#chat-list').on('scroll', () => {
+
+        if (event.target.offsetHeight + event.target.scrollTop + 10 >= event.target.scrollHeight) {
+          chatPointer = 'bottom';
+          newMsg = 0;
+          $('.message-count').hide();
+          $('.chat-bottom').hide();
+          connection.socket.emit("seenMessage", { senderId: receiverId });
+        } else {
+          $('.chat-bottom').show();
+          // console.log(parseInt(event.target.offsetHeight), parseInt(event.target.scrollTop), parseInt(event.target.scrollHeight))
+          chatPointer = 'top';
+          // console.log(event.target.scrollTop);
+          if (chatTop == false && (event.target.scrollTop < 400 || event.target.scrollTop < 300 || event.target.scrollTop < 200 || event.target.scrollTop < 100 || event.target.scrollTop < 50 || event.target.scrollTop === 0)) {
+            chatTop = true;
+            $('.chat-loading').show();
+
+            connection.socket.emit("chatList", { receiverId: receiverId }, chatPageIndex);
+
+          }
+        }
+      });
+
+      // var el = document.getElementById('chat-list');
+      // el.addEventListener('wheel', function (event) {
+      //   console.log('wheel');
+      //   if (event.target.scrollTop === 0) {
+      //     // alert('Top of page detected');
+      //   }
+      // }, false);
+    });
+
+
+
+
+    //setInterval(() => {
+    //  console.log(chatPointer, //chatPageIndex, chatTop);
+    //}, 100)
+  </script>
 </head>
 
 <body>
-    <nav class="navbar navbar-expand-sm bg-dark navbar-dark">
-        <ul class="navbar-nav">
-            <li class="nav-item">
-                <a class="nav-link active" href="">Live Chat</a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" href="javascript:{}" onclick="testConnection()">Test Connection</a>
-            </li>
-            <li class="nav-item" id="user-name" style="display:none">
-                <a class="nav-link" href="javascript:{}"></a>
-            </li>
-            <li class="nav-item" id="logout-btn" style="display:none">
-                <a class="nav-link" href="javascript:{}" onclick="logout()">Logout</a>
-            </li>
+  <nav class="navbar navbar-expand-sm bg-dark navbar-dark">
+    <ul class="navbar-nav">
+      <li class="nav-item">
+        <a class="nav-link active" href="">Live Chat</a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="javascript:{}" onclick="testConnection()">Test Connection</a>
+      </li>
+      <li class="nav-item" id="user-name" style="display: none">
+        <a class="nav-link" href="javascript:{}"></a>
+      </li>
+      <li class="nav-item" id="logout-btn" style="display: none">
+        <a class="nav-link" href="javascript:{}" onclick="logout()">Logout</a>
+      </li>
+    </ul>
+  </nav>
 
-        </ul>
+  <div class="d-flex justify-content-center">
+    <div class="mt-5 main-container" style="width: 50vw">
+      <div id="msg" style="height: 70px"></div>
+      <div class="list-group" id="user-list"></div>
 
-    </nav>
+      <div class="jumbotron" id="login-form" style="display: none">
+        <h1>Login</h1>
+        <form onsubmit="login(this)">
+          <div class="form-group">
+            <label for="email">Email:</label>
+            <input type="email" class="form-control" placeholder="Enter email" id="email" name="email" />
+          </div>
+          <div class="form-group">
+            <label for="pwd">Password:</label>
+            <input type="password" class="form-control" placeholder="Enter password" id="pwd" name="password" />
+          </div>
+          <div class="login-err float-right"></div>
+          <button type="submit" class="btn btn-success">Login</button>
+        </form>
+      </div>
+      <br />
 
-    <div class="d-flex justify-content-center">
-        <div class="mt-5 main-container" style="width:50vw">
-
-            <div id="msg" style="height:70px"></div>
-            <div class="list-group" id="user-list"></div>
-
-            <div class="jumbotron" id="login-form" style="display:none">
-                <h1>Login</h1>
-                <form onsubmit="login(this)">
-                    <div class="form-group">
-                        <label for="email">Email:</label>
-                        <input type="email" class="form-control" placeholder="Enter email" id="email" name="email">
-                    </div>
-                    <div class="form-group">
-                        <label for="pwd">Password:</label>
-                        <input type="password" class="form-control" placeholder="Enter password" id="pwd"
-                            name="password">
-                    </div>
-                    <div class="login-err float-right"></div>
-                    <button type="submit" class="btn btn-success">Login</button>
-                </form>
-            </div>
-            <br />
-
-            <div id="chat-box" style="display:none;position:relative">
-                <div class="chat-header" id="chat-header"></div>
-                <div class="chat-box">
-                    <div class="chat-list" id="chat-list"></div>
-
-                </div>
-                <div class="user-typing">Typing...</div>
-                <div class="chat-input">
-                    <form autocomplete="off" style="display: flex;">
-                        <div class="input-group mb-3">
-
-                            <input onkeydown="press(event)" id="chat-input" type="text"
-                                class="form-control border-radius-0 chat-input-box" placeholder="Type message...">
-                            <div class="input-group-append">
-                                <span onclick="sendMessage('#chat-box')"
-                                    class="input-group-text border-radius-0 chat-send">Send</span>
-                            </div>
-
-                        </div>
-                    </form>
-                </div>
-            </div>
+      <div id="chat-box" style="display: none; position: relative">
+        <div class="chat-header" id="chat-header"></div>
+        <div class="chat-box">
+          <div class="chat-loading">...</div>
+          <div class="chat-list" id="chat-list"></div>
         </div>
+        <div class="user-typing">Typing...</div>
+        <div class="new-message">
+          <div class="chat-bottom" onclick="showNewMsg()"><span class="message-count">0</span>
+            <svg style="width: 16px;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+              stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+            </svg>
+          </div>
+        </div>
+        <div class=" chat-input">
+          <form autocomplete="off" style="display: flex">
+            <div class="input-group mb-3">
+              <input onkeydown="press(event)" id="chat-input" type="text"
+                class="form-control border-radius-0 chat-input-box" placeholder="Type message..." />
+              <div class="input-group-append">
+                <span onclick="sendMessage('#chat-box')" class="input-group-text border-radius-0 chat-send">Send</span>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
     </div>
+  </div>
 </body>
 
 </html>
